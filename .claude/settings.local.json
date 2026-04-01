@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/vyslabdr/Desktop/vibecoding/**)",
+      "Bash(npx create-next-app@14 repairtrack-app --typescript --tailwind --eslint --app --no-src-dir --import-alias=\"@/*\" --no-git)",
+      "Bash(cp -r /home/vyslabdr/Desktop/vibecoding/repairtrack-app/. /home/vyslabdr/Desktop/vibecoding/repairtrack/)",
+      "Bash(rm -rf /home/vyslabdr/Desktop/vibecoding/repairtrack-app)",
+      "Bash(npm install:*)"
+    ]
+  }
+}

@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  manager
+  technician
+}
+
+enum DeviceStatus {
+  received
+  inspecting
+  repairing
+  awaiting_delivery
+  archived
+}
+
+model User {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String   @db.VarChar(100)
+  email            String   @unique @db.VarChar(150)
+  password         String   @db.VarChar(255)
+  role             Role
+  isActive         Boolean  @default(true) @map("is_active")
+  mustChangePass   Boolean  @default(false) @map("must_change_pass")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  devicesAssigned  Device[] @relation("TechnicianDevices")
+  devicesCreated   Device[] @relation("CreatedByDevices")
+  historyChanges   DeviceHistory[]
+  messages         DeviceMessage[]
+
+  @@map("users")
+}
+
+model Device {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ticketId       String       @unique @map("ticket_id") @db.VarChar(20)
+  customerName   String       @map("customer_name") @db.VarChar(100)
+  customerPhone  String       @map("customer_phone") @db.VarChar(20)
+  customerEmail  String?      @map("customer_email") @db.VarChar(150)
+  brand          String       @db.VarChar(80)
+  model          String       @db.VarChar(100)
+  serialNumber   String?      @map("serial_number") @db.VarChar(100)
+  issueDesc      String       @map("issue_desc")
+  status         DeviceStatus @default(received)
+  technicianId   String?      @map("technician_id") @db.Uuid
+  estimatedDate  DateTime?    @map("estimated_date") @db.Date
+  repairCost     Decimal?     @map("repair_cost") @db.Decimal(10, 2)
+  warranty       Boolean      @default(false)
+  notes          String?
+  photos         String[]     @default([])
+  createdBy      String?      @map("created_by") @db.Uuid
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  technician     User?        @relation("TechnicianDevices", fields: [technicianId], references: [id])
+  creator        User?        @relation("CreatedByDevices", fields: [createdBy], references: [id])
+  history        DeviceHistory[]
+  messages       DeviceMessage[]
+
+  @@map("devices")
+}
+
+model DeviceHistory {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deviceId   String   @map("device_id") @db.Uuid
+  changedBy  String?  @map("changed_by") @db.Uuid
+  oldStatus  String?  @map("old_status") @db.VarChar(50)
+  newStatus  String?  @map("new_status") @db.VarChar(50)
+  note       String?
+  changedAt  DateTime @default(now()) @map("changed_at")
+
+  device     Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [changedBy], references: [id])
+
+  @@map("device_history")
+}
+
+model DeviceMessage {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deviceId  String   @map("device_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("device_messages")
+}
+
+model SystemSettings {
+  key       String   @id @db.VarChar(100)
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
